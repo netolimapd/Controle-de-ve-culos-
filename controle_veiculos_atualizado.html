@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Controle de Veículos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f2f2f2;
+        }
+        .vehicle-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: white;
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .vehicle-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .time-elapsed {
+            font-size: 20px;
+            margin: 8px 0;
+        }
+        .total-value {
+            color: green;
+            font-weight: bold;
+        }
+        button {
+            margin-right: 8px;
+            padding: 8px 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Controle de Veículos</h1>
+
+    <div class="vehicle-card" data-vehicle-id="moto1">
+        <div class="vehicle-title">Moto 1</div>
+        <div class="time-elapsed">00:00:00</div>
+        <div class="total-value">R$ 0,00</div>
+        <button class="start-button">Iniciar</button>
+        <button class="stop-button">Parar</button>
+        <button class="reset-button">Resetar</button>
+    </div>
+
+    <div class="vehicle-card" data-vehicle-id="moto2">
+        <div class="vehicle-title">Moto 2</div>
+        <div class="time-elapsed">00:00:00</div>
+        <div class="total-value">R$ 0,00</div>
+        <button class="start-button">Iniciar</button>
+        <button class="stop-button">Parar</button>
+        <button class="reset-button">Resetar</button>
+    </div>
+
+    <div class="vehicle-card" data-vehicle-id="triciclo1">
+        <div class="vehicle-title">Triciclo 1</div>
+        <div class="time-elapsed">00:00:00</div>
+        <div class="total-value">R$ 0,00</div>
+        <button class="start-button">Iniciar</button>
+        <button class="stop-button">Parar</button>
+        <button class="reset-button">Resetar</button>
+    </div>
+
+    <div class="vehicle-card" data-vehicle-id="triciclo2">
+        <div class="vehicle-title">Triciclo 2</div>
+        <div class="time-elapsed">00:00:00</div>
+        <div class="total-value">R$ 0,00</div>
+        <button class="start-button">Iniciar</button>
+        <button class="stop-button">Parar</button>
+        <button class="reset-button">Resetar</button>
+    </div>
+
+    <div class="vehicle-card" data-vehicle-id="carro1">
+        <div class="vehicle-title">Carro 1</div>
+        <div class="time-elapsed">00:00:00</div>
+        <div class="total-value">R$ 0,00</div>
+        <button class="start-button">Iniciar</button>
+        <button class="stop-button">Parar</button>
+        <button class="reset-button">Resetar</button>
+    </div>
+
+    <script>
+        const vehicles = {
+            moto1: { startTime: null, timerInterval: null, elapsedTimeInSeconds: 0, accumulatedSeconds: 0, elements: {} },
+            moto2: { startTime: null, timerInterval: null, elapsedTimeInSeconds: 0, accumulatedSeconds: 0, elements: {} },
+            triciclo1: { startTime: null, timerInterval: null, elapsedTimeInSeconds: 0, accumulatedSeconds: 0, elements: {} },
+            triciclo2: { startTime: null, timerInterval: null, elapsedTimeInSeconds: 0, accumulatedSeconds: 0, elements: {} },
+            carro1: { startTime: null, timerInterval: null, elapsedTimeInSeconds: 0, accumulatedSeconds: 0, elements: {} }
+        };
+
+        const formatter = new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+
+        
+function calculateValue(totalMinutes) {
+    const blocksOf5Minutes = Math.ceil(totalMinutes / 5);
+    return blocksOf5Minutes * 5.00;
+}
+            let totalValue = 0;
+            if (totalMinutes <= 5) {
+                totalValue = 5.00;
+            } else {
+                const remainingMinutes = totalMinutes - 5;
+                const blocksOf5Minutes = Math.ceil(remainingMinutes / 5);
+                totalValue = 5.00 + (blocksOf5Minutes * 7.00);
+            }
+            return totalValue;
+        }
+
+        function updateTimerDisplay(vehicleId) {
+            const vehicle = vehicles[vehicleId];
+            const hours = Math.floor(vehicle.elapsedTimeInSeconds / 3600);
+            const minutes = Math.floor((vehicle.elapsedTimeInSeconds % 3600) / 60);
+            const seconds = vehicle.elapsedTimeInSeconds % 60;
+            vehicle.elements.timeElapsedSpan.textContent = [hours, minutes, seconds]
+                .map(unit => String(unit).padStart(2, '0'))
+                .join(':');
+        }
+
+        function startTimer(vehicleId) {
+            const vehicle = vehicles[vehicleId];
+            vehicle.elements.startButton.disabled = true;
+            vehicle.elements.stopButton.disabled = false;
+            vehicle.elements.resetButton.disabled = false;
+
+            vehicle.startTime = Date.now();
+
+            clearInterval(vehicle.timerInterval);
+            vehicle.timerInterval = setInterval(() => {
+                const currentTime = Date.now();
+                vehicle.elapsedTimeInSeconds = vehicle.accumulatedSeconds + Math.floor((currentTime - vehicle.startTime) / 1000);
+                updateTimerDisplay(vehicleId);
+            }, 1000);
+
+            vehicle.elements.totalValueSpan.textContent = formatter.format(0);
+    updateTotalGeral();
+        }
+
+        function stopTimer(vehicleId) {
+            const vehicle = vehicles[vehicleId];
+            vehicle.elements.startButton.disabled = false;
+            vehicle.elements.stopButton.disabled = true;
+
+            clearInterval(vehicle.timerInterval);
+
+            const currentTime = Date.now();
+            vehicle.elapsedTimeInSeconds = vehicle.accumulatedSeconds + Math.floor((currentTime - vehicle.startTime) / 1000);
+            vehicle.accumulatedSeconds = vehicle.elapsedTimeInSeconds;
+
+            const totalMinutes = Math.ceil(vehicle.elapsedTimeInSeconds / 60);
+            const finalValue = calculateValue(totalMinutes);
+            vehicle.elements.totalValueSpan.textContent = formatter.format(finalValue);
+    updateTotalGeral();
+
+            updateTimerDisplay(vehicleId);
+        }
+
+        function resetVehicle(vehicleId) {
+            const vehicle = vehicles[vehicleId];
+            clearInterval(vehicle.timerInterval);
+            vehicle.elapsedTimeInSeconds = 0;
+            vehicle.accumulatedSeconds = 0;
+            vehicle.startTime = null;
+
+            updateTimerDisplay(vehicleId);
+            vehicle.elements.totalValueSpan.textContent = formatter.format(0);
+    updateTotalGeral();
+
+            vehicle.elements.startButton.disabled = false;
+            vehicle.elements.stopButton.disabled = true;
+            vehicle.elements.resetButton.disabled = true;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            for (const vehicleId in vehicles) {
+                if (vehicles.hasOwnProperty(vehicleId)) {
+                    const vehicle = vehicles[vehicleId];
+                    const vehicleCard = document.querySelector(`.vehicle-card[data-vehicle-id="${vehicleId}"]`);
+
+                    vehicle.elements.timeElapsedSpan = vehicleCard.querySelector('.time-elapsed');
+                    vehicle.elements.totalValueSpan = vehicleCard.querySelector('.total-value');
+                    vehicle.elements.startButton = vehicleCard.querySelector('.start-button');
+                    vehicle.elements.stopButton = vehicleCard.querySelector('.stop-button');
+                    vehicle.elements.resetButton = vehicleCard.querySelector('.reset-button');
+
+                    vehicle.elements.startButton.addEventListener('click', () => startTimer(vehicleId));
+                    vehicle.elements.stopButton.addEventListener('click', () => stopTimer(vehicleId));
+                    vehicle.elements.resetButton.addEventListener('click', () => resetVehicle(vehicleId));
+
+                    updateTimerDisplay(vehicleId);
+                    vehicle.elements.stopButton.disabled = true;
+                    vehicle.elements.resetButton.disabled = true;
+                }
+            }
+        });
+    </script>
+
+
+    <div style="margin-top: 40px; font-size: 20px; font-weight: bold;">
+        Valor Geral: <span id="total-geral">R$ 0,00</span>
+    </div>
+</body>
+
+</html>
